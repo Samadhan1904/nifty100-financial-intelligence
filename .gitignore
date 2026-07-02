@@ -1,0 +1,15 @@
+.venv/
+.env
+__pycache__/
+*.pyc
+*.pyo
+*.db
+output/
+reports/tearsheets/
+reports/sector/
+reports/portfolio/
+reports/radar_charts/
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
