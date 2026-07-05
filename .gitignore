@@ -12,4 +12,5 @@ reports/radar_charts/
 .DS_Store
 Thumbs.db
 .vscode/
-.idea/
+.idea/data/raw/ 
+data/supporting/ 
