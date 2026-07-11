@@ -235,3 +235,91 @@ class TestNetDebt:
         """Zero borrowings"""
         result = compute_net_debt(0, 5000)
         assert result == pytest.approx(-5000.0, abs=0.1)
+
+# ─────────────────────────────────────────────────────────────────────────────
+# CAGR TESTS
+# ─────────────────────────────────────────────────────────────────────────────
+
+from src.analytics.cagr import compute_cagr, CAGRFlag
+
+
+class TestCAGR:
+    """Tests for compute_cagr() function."""
+
+    def test_cagr_normal_10yr(self):
+        """Standard 10 year CAGR"""
+        val, flag = compute_cagr(100000, 240000, 10)
+        assert val == pytest.approx(9.15, abs=0.1)
+        assert flag == CAGRFlag.NORMAL
+
+    def test_cagr_normal_5yr(self):
+        """Standard 5 year CAGR"""
+        val, flag = compute_cagr(50000, 100000, 5)
+        assert val == pytest.approx(14.87, abs=0.1)
+        assert flag == CAGRFlag.NORMAL
+
+    def test_cagr_normal_3yr(self):
+        """Standard 3 year CAGR"""
+        val, flag = compute_cagr(80000, 100000, 3)
+        assert val == pytest.approx(7.72, abs=0.1)
+        assert flag == CAGRFlag.NORMAL
+
+    def test_cagr_turnaround(self):
+        """Base negative end positive — TURNAROUND"""
+        val, flag = compute_cagr(-5000, 8000, 5)
+        assert val is None
+        assert flag == CAGRFlag.TURNAROUND
+
+    def test_cagr_decline_to_loss(self):
+        """Base positive end negative — DECLINE_TO_LOSS"""
+        val, flag = compute_cagr(5000, -3000, 5)
+        assert val is None
+        assert flag == CAGRFlag.DECLINE_TO_LOSS
+
+    def test_cagr_both_negative(self):
+        """Both negative — BOTH_NEGATIVE"""
+        val, flag = compute_cagr(-5000, -3000, 5)
+        assert val is None
+        assert flag == CAGRFlag.BOTH_NEGATIVE
+
+    def test_cagr_zero_base(self):
+        """Zero base — ZERO_BASE"""
+        val, flag = compute_cagr(0, 50000, 5)
+        assert val is None
+        assert flag == CAGRFlag.ZERO_BASE
+
+    def test_cagr_none_start(self):
+        """None start — MISSING_DATA"""
+        val, flag = compute_cagr(None, 50000, 5)
+        assert val is None
+        assert flag == CAGRFlag.MISSING_DATA
+
+    def test_cagr_none_end(self):
+        """None end — MISSING_DATA"""
+        val, flag = compute_cagr(50000, None, 5)
+        assert val is None
+        assert flag == CAGRFlag.MISSING_DATA
+
+    def test_cagr_insufficient_years(self):
+        """n_years < 1 — INSUFFICIENT"""
+        val, flag = compute_cagr(50000, 100000, 0)
+        assert val is None
+        assert flag == CAGRFlag.INSUFFICIENT
+
+    def test_cagr_flat_growth(self):
+        """No growth — 0% CAGR"""
+        val, flag = compute_cagr(100000, 100000, 5)
+        assert val == pytest.approx(0.0, abs=0.01)
+        assert flag == CAGRFlag.NORMAL
+
+    def test_cagr_negative_growth(self):
+        """Declining revenue — negative CAGR"""
+        val, flag = compute_cagr(100000, 50000, 5)
+        assert val == pytest.approx(-12.94, abs=0.1)
+        assert flag == CAGRFlag.NORMAL
+
+    def test_cagr_one_year(self):
+        """Single year growth"""
+        val, flag = compute_cagr(100000, 115000, 1)
+        assert val == pytest.approx(15.0, abs=0.1)
+        assert flag == CAGRFlag.NORMAL
