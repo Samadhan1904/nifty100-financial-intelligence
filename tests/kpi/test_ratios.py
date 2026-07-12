@@ -323,3 +323,203 @@ class TestCAGR:
         val, flag = compute_cagr(100000, 115000, 1)
         assert val == pytest.approx(15.0, abs=0.1)
         assert flag == CAGRFlag.NORMAL
+
+        # ─────────────────────────────────────────────────────────────────────────────
+# CASH FLOW KPI TESTS
+# ─────────────────────────────────────────────────────────────────────────────
+
+from src.analytics.cashflow_kpis import (
+    compute_fcf,
+    compute_cfo_quality,
+    compute_capex_intensity,
+    compute_fcf_conversion,
+    compute_capital_allocation_pattern,
+    detect_distress,
+    get_cfo_quality_tier,
+    get_capex_tier,
+    CapitalPattern,
+)
+
+
+class TestFCF:
+    """Tests for compute_fcf()"""
+
+    def test_fcf_positive(self):
+        """Healthy FCF — CFO > |CFI|"""
+        assert compute_fcf(40000, -5000) == 35000
+
+    def test_fcf_negative(self):
+        """Negative FCF — investing heavily"""
+        assert compute_fcf(5000, -20000) == -15000
+
+    def test_fcf_both_positive(self):
+        """Both positive — selling assets"""
+        assert compute_fcf(10000, 5000) == 15000
+
+    def test_fcf_none_cfo(self):
+        """None CFO — return None"""
+        assert compute_fcf(None, -5000) is None
+
+    def test_fcf_none_cfi(self):
+        """None CFI — return None"""
+        assert compute_fcf(40000, None) is None
+
+    def test_fcf_zero_cfi(self):
+        """Zero CFI — FCF equals CFO"""
+        assert compute_fcf(40000, 0) == 40000
+
+
+class TestCFOQuality:
+    """Tests for compute_cfo_quality()"""
+
+    def test_high_quality(self):
+        """CFO > PAT — high quality"""
+        result = compute_cfo_quality(40000, 35000)
+        assert result == pytest.approx(1.14, abs=0.01)
+
+    def test_accrual_risk(self):
+        """CFO << PAT — accrual risk"""
+        result = compute_cfo_quality(5000, 35000)
+        assert result == pytest.approx(0.14, abs=0.01)
+
+    def test_zero_profit(self):
+        """Zero PAT — return None"""
+        assert compute_cfo_quality(40000, 0) is None
+
+    def test_negative_profit(self):
+        """Negative PAT — return None"""
+        assert compute_cfo_quality(40000, -5000) is None
+
+    def test_none_cfo(self):
+        """None CFO — return None"""
+        assert compute_cfo_quality(None, 35000) is None
+
+    def test_quality_tier_high(self):
+        """High quality tier"""
+        assert get_cfo_quality_tier(1.2) == "High Quality Earnings"
+
+    def test_quality_tier_acceptable(self):
+        """Acceptable tier"""
+        assert get_cfo_quality_tier(0.7) == "Acceptable"
+
+    def test_quality_tier_accrual(self):
+        """Accrual risk tier"""
+        assert get_cfo_quality_tier(0.3) == "Accrual Risk"
+
+    def test_quality_tier_none(self):
+        """None returns N/A"""
+        assert get_cfo_quality_tier(None) == "N/A"
+
+
+class TestCapexIntensity:
+    """Tests for compute_capex_intensity()"""
+
+    def test_asset_light(self):
+        """IT company — asset light"""
+        result = compute_capex_intensity(-5000, 225000)
+        assert result == pytest.approx(2.22, abs=0.1)
+
+    def test_capital_intensive(self):
+        """Steel company — capital intensive"""
+        result = compute_capex_intensity(-30000, 150000)
+        assert result == pytest.approx(20.0, abs=0.1)
+
+    def test_positive_cfi(self):
+        """Positive CFI — selling assets, abs value used"""
+        result = compute_capex_intensity(5000, 100000)
+        assert result == pytest.approx(5.0, abs=0.1)
+
+    def test_zero_sales(self):
+        """Zero sales — return None"""
+        assert compute_capex_intensity(-5000, 0) is None
+
+    def test_none_cfi(self):
+        """None CFI — return None"""
+        assert compute_capex_intensity(None, 100000) is None
+
+    def test_capex_tier_asset_light(self):
+        """Asset light tier"""
+        assert get_capex_tier(2.0) == "Asset-Light"
+
+    def test_capex_tier_moderate(self):
+        """Moderate tier"""
+        assert get_capex_tier(5.0) == "Moderate"
+
+    def test_capex_tier_intensive(self):
+        """Capital intensive tier"""
+        assert get_capex_tier(15.0) == "Capital Intensive"
+
+
+class TestFCFConversion:
+    """Tests for compute_fcf_conversion()"""
+
+    def test_good_conversion(self):
+        """70% conversion — efficient"""
+        result = compute_fcf_conversion(35000, 50000)
+        assert result == pytest.approx(70.0, abs=0.1)
+
+    def test_negative_fcf(self):
+        """Negative FCF — negative conversion"""
+        result = compute_fcf_conversion(-5000, 50000)
+        assert result == pytest.approx(-10.0, abs=0.1)
+
+    def test_zero_ebitda(self):
+        """Zero EBITDA — return None"""
+        assert compute_fcf_conversion(35000, 0) is None
+
+    def test_negative_ebitda(self):
+        """Negative EBITDA — return None"""
+        assert compute_fcf_conversion(35000, -10000) is None
+
+    def test_none_fcf(self):
+        """None FCF — return None"""
+        assert compute_fcf_conversion(None, 50000) is None
+
+
+class TestCapitalPattern:
+    """Tests for compute_capital_allocation_pattern()"""
+
+    def test_reinvestor(self):
+        """+ - - pattern = Reinvestor"""
+        result = compute_capital_allocation_pattern(40000, -5000, -10000)
+        assert result == CapitalPattern.REINVESTOR
+
+    def test_growth_financed(self):
+        """+ - + pattern = Growth Financed"""
+        result = compute_capital_allocation_pattern(40000, -5000, 10000)
+        assert result == CapitalPattern.GROWTH_FINANCED
+
+    def test_shareholder_returns(self):
+        """+ + - pattern = Shareholder Returns"""
+        result = compute_capital_allocation_pattern(40000, 5000, -10000)
+        assert result == CapitalPattern.SHAREHOLDER_RETURN
+
+    def test_distress_signal(self):
+        """- - + pattern = Distress Signal"""
+        result = compute_capital_allocation_pattern(-5000, -3000, 10000)
+        assert result == CapitalPattern.DISTRESS
+
+    def test_cash_burn(self):
+        """- + + pattern = Cash Burn"""
+        result = compute_capital_allocation_pattern(-5000, 5000, 10000)
+        assert result == CapitalPattern.CASH_BURN
+
+
+class TestDistressDetection:
+    """Tests for detect_distress()"""
+
+    def test_distress_detected(self):
+        """CFO < 0 and CFF > 0 = distress"""
+        assert detect_distress(-5000, 10000) is True
+
+    def test_no_distress_positive_cfo(self):
+        """CFO > 0 = no distress"""
+        assert detect_distress(40000, 10000) is False
+
+    def test_no_distress_negative_cff(self):
+        """CFF < 0 = no distress"""
+        assert detect_distress(-5000, -10000) is False
+
+    def test_none_values(self):
+        """None values = no distress"""
+        assert detect_distress(None, 10000) is False
