@@ -216,3 +216,80 @@ CREATE INDEX IF NOT EXISTS idx_cf_year
 
 CREATE INDEX IF NOT EXISTS idx_sectors_broad
     ON sectors(broad_sector);
+
+-- ============================================================
+-- TABLE 11: financial_ratios
+-- Computed KPI table — populated by ratio_engine.py
+-- Sprint 2 — Day 11
+-- ============================================================
+
+CREATE TABLE IF NOT EXISTS financial_ratios (
+    id                              INTEGER PRIMARY KEY AUTOINCREMENT,
+    company_id                      TEXT    NOT NULL,
+    year                            TEXT    NOT NULL,
+
+    -- Profitability
+    net_profit_margin_pct           REAL,
+    operating_profit_margin_pct     REAL,
+    ebit_margin_pct                 REAL,
+    return_on_equity_pct            REAL,
+    return_on_capital_pct           REAL,
+    return_on_assets_pct            REAL,
+
+    -- Leverage
+    debt_to_equity                  REAL,
+    interest_coverage               REAL,
+    asset_turnover                  REAL,
+    net_debt_cr                     REAL,
+    total_debt_cr                   REAL,
+    dividend_payout_ratio_pct       REAL,
+    book_value_per_share            REAL,
+
+    -- Raw values
+    sales_cr                        REAL,
+    net_profit_cr                   REAL,
+    eps                             REAL,
+
+    -- CAGR — Revenue
+    revenue_cagr_3yr                REAL,
+    revenue_cagr_3yr_flag           TEXT,
+    revenue_cagr_5yr                REAL,
+    revenue_cagr_5yr_flag           TEXT,
+    revenue_cagr_10yr               REAL,
+    revenue_cagr_10yr_flag          TEXT,
+
+    -- CAGR — PAT
+    pat_cagr_3yr                    REAL,
+    pat_cagr_3yr_flag               TEXT,
+    pat_cagr_5yr                    REAL,
+    pat_cagr_5yr_flag               TEXT,
+    pat_cagr_10yr                   REAL,
+    pat_cagr_10yr_flag              TEXT,
+
+    -- CAGR — EPS
+    eps_cagr_3yr                    REAL,
+    eps_cagr_3yr_flag               TEXT,
+    eps_cagr_5yr                    REAL,
+    eps_cagr_5yr_flag               TEXT,
+
+    -- Cash Flow KPIs
+    free_cash_flow_cr               REAL,
+    cash_from_operations_cr         REAL,
+    cash_from_investing_cr          REAL,
+    cash_from_financing_cr          REAL,
+    cfo_quality_score               REAL,
+    capex_intensity_pct             REAL,
+    fcf_conversion_pct              REAL,
+    capital_pattern                 TEXT,
+    is_distress                     INTEGER,
+    cfo_quality_tier                TEXT,
+    capex_tier                      TEXT,
+
+    UNIQUE (company_id, year)
+);
+
+CREATE INDEX IF NOT EXISTS idx_fr_company
+    ON financial_ratios(company_id);
+
+CREATE INDEX IF NOT EXISTS idx_fr_year
+    ON financial_ratios(year);
