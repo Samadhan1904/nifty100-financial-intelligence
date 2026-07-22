@@ -1,0 +1,139 @@
+# ============================================================
+# Nifty 100 Financial Intelligence Platform
+# Screener Configuration — All Threshold Definitions
+#
+# Edit this file to create custom screens.
+# No code changes needed.
+#
+# Author: Samadhan
+# Sprint: 3 — Day 15
+# ============================================================
+
+# ── Composite Score Weights ───────────────────────────────────
+# These weights define how the 0-100 composite score is built.
+# Must sum to 1.0
+
+composite_score_weights:
+  profitability: 0.35    # ROE, ROCE, NPM
+  cash_quality:  0.30    # FCF CAGR, CFO/PAT ratio
+  growth:        0.20    # Revenue CAGR, PAT CAGR
+  leverage:      0.15    # D/E ratio, ICR
+
+
+# ── Preset Screeners ─────────────────────────────────────────
+# Each preset has filter thresholds and a ranking metric.
+# null means no filter on that metric.
+
+presets:
+
+  quality_compounder:
+    description: "High ROE, low debt, positive FCF, steady growth"
+    filters:
+      min_roe:              15.0    # ROE > 15%
+      max_de:                1.0    # D/E < 1.0
+      min_fcf:               0.0    # FCF > 0 (positive free cash flow)
+      min_revenue_cagr_5yr: 10.0    # Revenue CAGR 5yr > 10%
+      min_npm:               8.0    # NPM > 8%
+    rank_by: composite_score
+    expected_results: "15-35 companies"
+
+  value_pick:
+    description: "Low P/E, low P/B, some dividend yield"
+    filters:
+      max_de:    2.0     # D/E < 2.0
+      min_npm:   5.0     # NPM > 5%
+      min_roe:  10.0     # ROE > 10%
+    rank_by: return_on_equity_pct
+    expected_results: "10-25 companies"
+
+  growth_accelerator:
+    description: "High revenue and profit growth, manageable debt"
+    filters:
+      min_revenue_cagr_5yr: 15.0   # Revenue CAGR 5yr > 15%
+      min_pat_cagr_5yr:     15.0   # PAT CAGR 5yr > 15%
+      max_de:                2.0   # D/E < 2.0
+    rank_by: revenue_cagr_5yr
+    expected_results: "8-20 companies"
+
+  dividend_champion:
+    description: "Consistent dividend payers with positive FCF"
+    filters:
+      min_fcf:   0.0    # FCF > 0
+      min_roe:  10.0    # ROE > 10%
+      min_npm:   5.0    # NPM > 5%
+    rank_by: return_on_equity_pct
+    expected_results: "10-20 companies"
+
+  debt_free_blue_chip:
+    description: "Zero debt companies with strong profitability"
+    filters:
+      max_de:    0.1    # D/E < 0.1 (essentially debt-free)
+      min_roe:  12.0    # ROE > 12%
+      min_npm:   8.0    # NPM > 8%
+    rank_by: return_on_equity_pct
+    expected_results: "15-30 companies"
+
+  turnaround_watch:
+    description: "Companies with improving revenue and positive FCF"
+    filters:
+      min_revenue_cagr_3yr: 10.0   # Revenue CAGR 3yr > 10%
+      min_fcf:               0.0   # FCF > 0 (latest year)
+      max_de:                3.0   # D/E < 3.0
+    rank_by: revenue_cagr_3yr
+    expected_results: "5-15 companies"
+
+
+# ── Filter Column Mapping ─────────────────────────────────────
+# Maps filter names to actual database column names
+
+filter_column_map:
+  min_roe:              return_on_equity_pct
+  max_de:               debt_to_equity
+  min_fcf:              free_cash_flow_cr
+  min_revenue_cagr_5yr: revenue_cagr_5yr
+  min_revenue_cagr_3yr: revenue_cagr_3yr
+  min_pat_cagr_5yr:     pat_cagr_5yr
+  min_npm:              net_profit_margin_pct
+  min_roce:             return_on_capital_pct
+  max_icr:              interest_coverage
+  min_icr:              interest_coverage
+
+
+# ── Sector Benchmarks ─────────────────────────────────────────
+# Used for sector-relative screening
+
+sector_benchmarks:
+  Information Technology:
+    typical_roe_min: 20
+    typical_de_max:  0.5
+    typical_opm_min: 20
+
+  Financials:
+    typical_roe_min: 12
+    typical_de_max:  10.0   # Banks have high D/E structurally
+    typical_opm_min: 20
+
+  Consumer Staples:
+    typical_roe_min: 18
+    typical_de_max:  1.0
+    typical_opm_min: 15
+
+  Energy:
+    typical_roe_min: 10
+    typical_de_max:  2.0
+    typical_opm_min: 8
+
+  Materials:
+    typical_roe_min: 10
+    typical_de_max:  1.5
+    typical_opm_min: 12
+
+  Healthcare:
+    typical_roe_min: 15
+    typical_de_max:  0.8
+    typical_opm_min: 15
+
+  Industrials:
+    typical_roe_min: 12
+    typical_de_max:  1.5
+    typical_opm_min: 10
